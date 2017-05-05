@@ -9,6 +9,15 @@ from traitlets.config import Application
 
 from nchp.dnsutils import get_nameservers
 
+def parse_proxy_streams_string(s):
+    streams = {}
+    try:
+        for mapping in s.split(';'): # ['90=10.0.0.2:800','8889=10.2.3.4:8001']
+            proxy_port , target = mapping.split('=')
+            streams[proxy_port] = target
+    except Exception as e:
+        print('Badly formatted proxy streams string "{}" : Error: {}'.format(s,e))
+    return streams # {'90':'10.0.0.2.800','8889':'10.2.3.4:8001'}
 
 class NCHPApp(Application):
     name = Unicode("nchp")
@@ -75,10 +84,10 @@ class NCHPApp(Application):
         help='Inward facing IP for API requests'
     )
 
-    jdbc_server = Unicode(
-        os.environ.get('JDBC_SERVER', ''),
+    proxy_streams = Unicode(
+        os.environ.get('PROXY_STREAMS', ''),
         config=True,
-        help='JDBC server to forward proxy'
+        help='string of the form "<proxy-port>=<ip>:<port>;..." of additional ports to forward'
     )
 
     auth_token = Unicode(
@@ -249,8 +258,11 @@ class NCHPApp(Application):
         else:
             api_ip = self.api_ip
 
+
+        proxy_streams = parse_proxy_streams_string(self.proxy_streams)
+
         context = {
-            'jdbc_server': self.jdbc_server,
+            'proxy_streams': proxy_streams,
             'dns_resolver': self.dns_resolver,
             'access_log_dest': self.access_log_dest(),
             'public_port': self.public_port,
