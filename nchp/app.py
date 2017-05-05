@@ -75,6 +75,12 @@ class NCHPApp(Application):
         help='Inward facing IP for API requests'
     )
 
+    jdbc_server = Unicode(
+        os.environ.get('JDBC_SERVER', ''),
+        config=True,
+        help='JDBC server to forward proxy'
+    )
+
     auth_token = Unicode(
         os.environ.get('CONFIGPROXY_AUTH_TOKEN', ''),
         config=True,
@@ -244,6 +250,7 @@ class NCHPApp(Application):
             api_ip = self.api_ip
 
         context = {
+            'jdbc_server': self.jdbc_server,
             'dns_resolver': self.dns_resolver,
             'access_log_dest': self.access_log_dest(),
             'public_port': self.public_port,
