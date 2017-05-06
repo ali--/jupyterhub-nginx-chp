@@ -36,6 +36,7 @@ class NCHPApp(Application):
         'api-ssl-cert': 'NCHPApp.api_ssl_cert',
         'api-ssl-ciphers': 'NCHPApp.api_ssl_ciphers',
         'api-ssl-dhparam': 'NCHPApp.api_ssl_dhparam',
+        'templates': 'NCHPApp.templates',
         # FIXME: Actually implement this! Adding this to make nchp work with
         # newer versions of jupyterhub
         'error-target': 'NCHPApp.error_target',
@@ -47,6 +48,11 @@ class NCHPApp(Application):
     config_file = Unicode('',
         config=True,
         help='Path to config file to read config parameters from'
+    )
+    templates = Unicode(
+        os.environ.get('TEMPLATES', ''),
+        config=True,
+        help='location of nginx.conf templates'
     )
     dns_resolver = Unicode(
         config=True,
@@ -215,13 +221,15 @@ class NCHPApp(Application):
 
     def build_nginx_conf(self):
         # FIXME: Use PackageLoader here!
-        env = jinja2.Environment(
-            loader=jinja2.PackageLoader(
-                'nchp',
-                'templates'
-            )
-        )
-        template = env.get_template('nginx.conf')
+        loader = jinja2.PackageLoader('nchp','templates')
+        if self.templates:
+            try:
+                loader = jinja2.FileSystemLoader(searchpath=self.templates)
+            except Exception as e:
+                print('Unable to load nginx templates from {}. Error: {}'.format(self.templates,e))
+                exit()
+                
+        template = jinja2.Environment(loader=loader).get_template('nginx.conf')
 
         # HACK: Replace localhost with 127.0.0.1
         # Reasons:
