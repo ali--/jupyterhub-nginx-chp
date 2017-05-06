@@ -103,11 +103,13 @@ class NCHPApp(Application):
     )
 
     public_ssl_cert = Unicode(
+        os.environ.get('PUBLIC_SSL_CER_FILE', ''),
         config=True,
         help='Path to the SSL certificate for public facing proxy'
     )
 
     public_ssl_key = Unicode(
+        os.environ.get('PUBLIC_SSL_KEY_FILE', ''),
         config=True,
         help='Path to the SSL key for public facing proxy'
     )
@@ -127,6 +129,7 @@ class NCHPApp(Application):
     )
 
     public_ssl_dhparam = Unicode(
+        os.environ.get('PUBLIC_DHPARAM_FILE', ''),
         config=True,
         help='SSL Diffie-Helman Parameters file (if any)'
     )
