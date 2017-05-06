@@ -11,6 +11,9 @@ from nchp.dnsutils import get_nameservers
 
 def parse_proxy_streams_string(s):
     streams = {}
+    if not s:
+        return streams
+
     try:
         for mapping in s.split(';'): # ['90=10.0.0.2:800','8889=10.2.3.4:8001']
             proxy_port , target = mapping.split('=')
@@ -221,15 +224,20 @@ class NCHPApp(Application):
 
     def build_nginx_conf(self):
         # FIXME: Use PackageLoader here!
-        loader = jinja2.PackageLoader('nchp','templates')
+        default_loader = jinja2.PackageLoader('nchp','templates')
+        loader = default_loader
         if self.templates:
-            try:
+            if not os.path.isdir(self.templates):
+                print("Templates directory {} does not exist".format(self.templates))
+            else:
+                print("Loading templates from {} : {}".format(self.templates,os.listdir(self.templates)))
                 loader = jinja2.FileSystemLoader(searchpath=self.templates)
-            except Exception as e:
-                print('Unable to load nginx templates from {}. Error: {}'.format(self.templates,e))
-                exit()
-                
-        template = jinja2.Environment(loader=loader).get_template('nginx.conf')
+        try:
+            template = jinja2.Environment(loader=loader).get_template('nginx.conf')
+        except Exception as e:
+            print('Unable to load nginx templates from {}. Error: {}. Ignoring user-provided templates'.format(self.templates,e))
+            template = jinja2.Environment(loader=default_loader).get_template('nginx.conf')
+        
 
         # HACK: Replace localhost with 127.0.0.1
         # Reasons:
